@@ -18,9 +18,11 @@ class CreateUsersTable extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('password');
-            $table->string('role');
-            $table->string('created_by');
-            $table->string('deleted_by');
+            $table->string('role')->default('normal');
+            $table->string('created_by')->default('me');
+            $table->string('deleted_by')->default('active');
+            $table->string('deleted_at');
+            $table->rememberToken();
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamps();
         });

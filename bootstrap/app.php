@@ -19,6 +19,9 @@ date_default_timezone_set(env('APP_TIMEZONE', 'UTC'));
 |
 */
 
+
+
+
 $app = new Laravel\Lumen\Application(
     dirname(__DIR__)
 );
@@ -60,6 +63,8 @@ $app->singleton(
 */
 
 $app->configure('app');
+$app->configure('jwt');
+$app->configure('mail');
 
 /*
 |--------------------------------------------------------------------------
@@ -77,7 +82,9 @@ $app->configure('app');
 // ]);
 
  $app->routeMiddleware([
-    'auth' => App\Http\Middleware\Auth0Middleware::class,
+    'auth' => App\Http\Middleware\Authenticate::class,
+    'auth.role' => \App\Http\Middleware\RoleAuthorization::class,
+    'verified' => App\Http\Middleware\EnsureEmailIsVerified::class,
  ]);
 
 /*
@@ -91,7 +98,11 @@ $app->configure('app');
 |
 */
 
-// $app->register(App\Providers\AppServiceProvider::class);
+ $app->register(App\Providers\AppServiceProvider::class);
+ $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
+ $app->register(\Illuminate\Notifications\NotificationServiceProvider::class);
+ $app->register(Illuminate\Mail\MailServiceProvider::class);
+ $app->register(Illuminate\Auth\Passwords\PasswordResetServiceProvider::class);
 // $app->register(App\Providers\AuthServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
 
@@ -105,6 +116,13 @@ $app->configure('app');
 | can respond to, as well as the controllers that may handle them.
 |
 */
+$app->alias('mail.manager', Illuminate\Mail\MailManager::class);
+$app->alias('mail.manager', Illuminate\Contracts\Mail\Factory::class);
+
+$app->alias('mailer', Illuminate\Mail\Mailer::class);
+$app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
+$app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class);
+
 
 $app->router->group([
     'namespace' => 'App\Http\Controllers',

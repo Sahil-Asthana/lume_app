@@ -3,15 +3,22 @@
         "Authorizable",
         "autoload",
         "autoloader",
+        "behaviour",
         "classmap",
+        "EHLO",
         "fakerphp",
         "jwks",
         "Laravel",
+        "Lcobucci",
+        "mailgun",
         "mysqld",
         "mysqlx",
+        "occured",
         "phpredis",
         "phpunit",
+        "Queueable",
         "Sahilasthana",
-        "sslmode"
+        "sslmode",
+        "Tymon"
     ]
 }
