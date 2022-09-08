@@ -9,6 +9,7 @@ use Laravel\Lumen\Auth\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use App\Traits\MustVerifyEmail;
+use App\Notifications\CustomResetPassword ;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 //use Illuminate\Database\Eloquent\SoftDeletes;
@@ -82,5 +83,9 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
                 }
         });
     }
+public function sendPasswordResetNotification($token)
+{
+    $this->notify(new CustomResetPassword($token));
+}
 
 }

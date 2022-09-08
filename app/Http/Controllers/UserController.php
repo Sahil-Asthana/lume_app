@@ -17,29 +17,29 @@ class UserController extends Controller
     }
     public function showAllUsers(Request $request)
     {
-        $user = DB::table('users');
-
+         $user = User::query();
         //filtering
-        if(strtolower($request->role) === 'admin'){
-            $user = DB::table('users')->where('role', '=', 'admin');
-        } elseif(strtolower($request->role) === 'normal'){
-            $user = DB::table('users')->where('role','=','normal');
+
+        if($request->filter != null && $request->filter != 'Apply filter'){
+        if(strtolower($request->filter) === 'deleted_at'){   
+            $user = User::query()->where('deleted_at','<>', 'active');
+        } else {
+            $user = User::query()->where('role','=',$request->filter);
+            }
         }
-        if(strtolower($request->deleted_by) === '1'){   
-            $user = DB::table('users')->where('deleted_by','<>', 'active');
+        // searching param
+        if($request->searchParam != null){
+            $user = User::query()->where('name','like',"%{$request->searchParam}%")
+                                ->orWhere('email','like',"%{$request->searchParam}%")
+                                ->orWhere('created_by','like',"%{$request->searchParam}%");
         }
 
         //sorting
-        if(strtolower($request->sort) === 'name'){
-            $user = DB::table('users')->orderBy('name', 'desc');
-        } elseif(strtolower($request->sort) === 'email'){
-            $user = DB::table('users')->orderBy('email', 'asc');
-        } elseif(strtolower($request->sort) === 'created_at'){
-            $user = DB::table('users')->orderBy('created_at', 'desc');
+        if($request->sort != null && $request->sort != 'Sort By'){
+            if($request->sort != 'created_at') $user = User::query()->orderBy($request->sort,'asc');
+            else $user = User::query()->orderBy($request->sort,'desc');
         }
-        
-        $user = $user->get(); 
-       // return view('user.index', ['users' => $user]);
+        $user = $user->get();
         return response()->json($user);
     }
 
@@ -68,7 +68,8 @@ class UserController extends Controller
         return response()->json($user, 201);
     }
     public function updateByUser(Request $request){
-        $user = auth()->user()->id;
+        $userId = auth()->user()->id;
+        $user = User::findOrFail($userId);
         $user->update($request->only(['email','name']));
         return response()->json($user, 200);
     } 
@@ -83,13 +84,13 @@ class UserController extends Controller
     public function delete($id)
     {
         $user = User::findOrFail($id);
-        if($user['deleted_by'] != null){
-            return response('No user exist');
+        if($user['deleted_by'] != 'active'){
+            return response()->json('No user exist',404);
         }
         $user['deleted_by'] = auth()->user()->id;
         $user->forceFill([
             'deleted_at' => $user->freshTimestamp(),
         ])->save();
-        return response('Deleted Successfully', 200);
+        return response()->json('Deleted Successfully', 200);
     }
 }

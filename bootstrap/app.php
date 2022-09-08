@@ -50,6 +50,7 @@ $app->singleton(
     Illuminate\Contracts\Console\Kernel::class,
     App\Console\Kernel::class
 );
+// class_alias(Pusher\Pusher::class, ‘Pusher’, true);
 
 /*
 |--------------------------------------------------------------------------
@@ -65,6 +66,7 @@ $app->singleton(
 $app->configure('app');
 $app->configure('jwt');
 $app->configure('mail');
+$app->configure('broadcasting');
 
 /*
 |--------------------------------------------------------------------------
@@ -86,6 +88,10 @@ $app->configure('mail');
     'auth.role' => \App\Http\Middleware\RoleAuthorization::class,
     'verified' => App\Http\Middleware\EnsureEmailIsVerified::class,
  ]);
+ $app->middleware([
+    App\Http\Middleware\CorsMiddleware::class
+ ]);
+ 
 
 /*
 |--------------------------------------------------------------------------
@@ -103,8 +109,10 @@ $app->configure('mail');
  $app->register(\Illuminate\Notifications\NotificationServiceProvider::class);
  $app->register(Illuminate\Mail\MailServiceProvider::class);
  $app->register(Illuminate\Auth\Passwords\PasswordResetServiceProvider::class);
+ $app->register(App\Providers\CatchAllOptionsRequestsProvider::class);
 // $app->register(App\Providers\AuthServiceProvider::class);
-// $app->register(App\Providers\EventServiceProvider::class);
+$app->register(App\Providers\EventServiceProvider::class);
+$app->register(App\Providers\BroadcastServiceProvider::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -118,7 +126,6 @@ $app->configure('mail');
 */
 $app->alias('mail.manager', Illuminate\Mail\MailManager::class);
 $app->alias('mail.manager', Illuminate\Contracts\Mail\Factory::class);
-
 $app->alias('mailer', Illuminate\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class);

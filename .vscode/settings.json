@@ -5,7 +5,10 @@
         "autoloader",
         "behaviour",
         "classmap",
+        "CURDATE",
+        "Dispatchable",
         "EHLO",
+        "endcomponent",
         "fakerphp",
         "jwks",
         "Laravel",
@@ -13,12 +16,16 @@
         "mailgun",
         "mysqld",
         "mysqlx",
+        "notif",
+        "notifs",
         "occured",
         "phpredis",
         "phpunit",
         "Queueable",
         "Sahilasthana",
         "sslmode",
-        "Tymon"
+        "taskreminder",
+        "Tymon",
+        "websockets"
     ]
 }
