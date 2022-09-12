@@ -18,26 +18,36 @@ class UserController extends Controller
     public function showAllUsers(Request $request)
     {
          $user = User::query();
+         $this->searchParam = $request->searchParam;
         //filtering
-
         if($request->filter != null && $request->filter != 'Apply filter'){
         if(strtolower($request->filter) === 'deleted_at'){   
-            $user = User::query()->where('deleted_at','<>', 'active');
+            $user = $user->where('deleted_at','<>', 'active')
+                         ->where(function($query){
+                            $query->where('name','like',"%{$searchParam}%")
+                            ->orWhere('email','like',"%{$searchParam}%")
+                            ->orWhere('created_by','like',"%{$searchParam}%");
+                        });
         } else {
-            $user = User::query()->where('role','=',$request->filter);
+            $user = $user->where('role','=',$request->filter)
+                         ->where(function($query){
+                                $query->where('name','like',"%{$this->searchParam}%")
+                                ->orWhere('email','like',"%{$this->searchParam}%")
+                                ->orWhere('created_by','like',"%{$this->searchParam}%");
+                            });
             }
         }
-        // searching param
-        if($request->searchParam != null){
-            $user = User::query()->where('name','like',"%{$request->searchParam}%")
+        //searching param
+        if($request->searchParam != null && $request->filter == null){
+            $user = $user->where('name','like',"%{$request->searchParam}%")
                                 ->orWhere('email','like',"%{$request->searchParam}%")
                                 ->orWhere('created_by','like',"%{$request->searchParam}%");
         }
 
         //sorting
         if($request->sort != null && $request->sort != 'Sort By'){
-            if($request->sort != 'created_at') $user = User::query()->orderBy($request->sort,'asc');
-            else $user = User::query()->orderBy($request->sort,'desc');
+            if($request->sort != 'created_at') $user = $user->orderBy($request->sort,'asc');
+            else $user = $user->orderBy($request->sort,'desc');
         }
         $user = $user->get();
         return response()->json($user);
@@ -56,14 +66,14 @@ class UserController extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|min:8',
             'password_confirmation' => 'required|same:password',
-            'role' => 'required',
+            'role' => '',
             'created_by' => '',
             'deleted_by' => ''
             
 
         ]);
         $user_data['password'] = Hash::make($request->password);
-        $user_data['created_by']= auth()->user()->id;
+        $user_data['created_by']= auth()->user()->name;
         $user = User::create($user_data);
         return response()->json($user, 201);
     }

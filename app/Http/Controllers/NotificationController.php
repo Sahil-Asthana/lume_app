@@ -33,4 +33,12 @@ class NotificationController extends Controller
 
     }
 
+    public function clearNotification(Request $request)
+    {
+        $userId = auth()->user()->id;
+        $notif = Notification::query()->where('user_id',$userId)->delete();
+        return response()->json("Deleted Successfully", 200);
+
+    }
+
 }

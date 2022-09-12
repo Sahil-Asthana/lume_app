@@ -9,9 +9,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\NotificationController;
+use Illuminate\Contracts\Event\Dispatcher;
+use App\Events\NotificationEvent;
+use App\Events\PusherEvent;
+use Pusher\Pusher;
+
+
 
 class TaskController extends Controller
 {
+    
     public function __construct()
     {
        // $this->middleware('auth.role:admin',['except' => ['update']]);
@@ -23,33 +30,51 @@ class TaskController extends Controller
 
         return response()->json($task);
     }
+
+    public function getTaskForUser (Request $request, $id) 
+    {
+        $task = Task::query()->where('assignee','=',$id)->get();
+        return response()->json($task);
+    }
+
     public function showAllTasks(Request $request)
     {
          $task = Task::query();
-         $role = auth()->user()->role;
-         $userId = auth()->user()->id;
+         $this->searchParam = $request->searchParam;
         //filtering
-
         if($request->filter != null && $request->filter != 'Apply filter'){
         if(strtolower($request->filter) === 'deleted_at'){   
-            $task = Task::query()->where('deleted_at','<>', 'active');
+            $task = $task->where('deleted_at','<>', 'active')
+                        ->where(function($query){
+                            $query->where('status','like',"%{$this->searchParam}%")
+                            ->orWhere('title','like',"%{$this->searchParam}%")
+                            ->orWhere('description','like',"%{$this->searchParam}%")
+                            ->orWhere('assignee','like',"%{$this->searchParam}%")
+                            ->orWhere('creator','like',"%{$this->searchParam}%");
+                        });
         } else {
-            $task = Task::query()->where('status','=',$request->filter);
+            $task = $task->where('status','=',$request->filter)
+                            ->where(function($query){
+                                $query->where('status','like',"%{$this->searchParam}%")
+                                ->orWhere('title','like',"%{$this->searchParam}%")
+                                ->orWhere('description','like',"%{$this->searchParam}%")
+                                ->orWhere('assignee','like',"%{$this->searchParam}%")
+                                ->orWhere('creator','like',"%{$this->searchParam}%");
+                            });
             }
         }
         //searching 
-        if($request->searchParam != null){
-            $task = Task::query()->where('status','like',"%{$request->searchParam}%")
+        if($request->searchParam != null && $request->filter == null){
+            $task = $task->where('status','like',"%{$request->searchParam}%")
                                 ->orWhere('title','like',"%{$request->searchParam}%")
                                 ->orWhere('description','like',"%{$request->searchParam}%")
                                 ->orWhere('assignee','like',"%{$request->searchParam}%")
-                                ->orWhere('creator','like',"%{$request->searchParam}%")
-                                ->orWhere('due_date','like',"%{$request->searchParam}%");
+                                ->orWhere('creator','like',"%{$request->searchParam}%");
         }
         //sorting
         if($request->sort != null && $request->sort != 'Sort By'){
-            if($request->sort != 'created_at') $task = Task::query()->orderBy($request->sort,'asc');
-            else $task = Task::query()->orderBy($request->sort,'desc');
+            if($request->sort != 'created_at') $task = $task->orderBy($request->sort,'asc');
+            else $task = $task->orderBy($request->sort,'desc');
         }
         $task = $task->get();
         return response()->json($task);
@@ -80,14 +105,14 @@ class TaskController extends Controller
         if(auth()->user()->role === 'normal' && $request->assignee != auth()->user()->id){
             return response()->json('You can not create task for others', 401);
         }
-        
+
         $task = Task::create($task_data);
-        $notif_data = ['notification'=>'New task is created with title: '.$task['title'], 'user_id'=> $task['assignee']];
-        NotificationController::create($notif_data);
-        
+        $type = 'created';
+        $user = User::findOrFail($request->assignee);
+        event(new NotificationEvent($user, $task, $type));
+        event(new PusherEvent('New Task is created with : '.$task->title, $user));
         return response()->json($task, 201);
     }
-
 
     public function updateStatus(Request $request, $id){
         $task = Task::findOrFail($id);
@@ -95,9 +120,11 @@ class TaskController extends Controller
             return response()->json('You can not change status', 401);
         }
         $task->update($request->only(['status']));
-        $notif_data = ['notification'=>'Status has been changed for task with title: '.$task->title.' to '.$task->status, 'user_id'=> $task->creator];
-        NotificationController::create($notif_data);
-        // event(new MyEvent('hello world'));
+
+        $type = "updated";
+        $user = User::findOrFail($task->creator);
+        event(new NotificationEvent($user, $task, $type));
+        event(new PusherEvent('Status has been changed for task with title: '.$task->title, $user));
         return response()->json($task, 200);
     } 
 
@@ -111,8 +138,11 @@ class TaskController extends Controller
             return response()->json('One or more filed is empty', 422);
         }
         $task->update($request->only(['title','description','due_date']));
-        $notif_data = ['notification'=>$task->title.' is updated by '.$task->creator, 'user_id'=> $task->assignee];
-        NotificationController::create($notif_data);
+
+        $type = 'edited';
+        $user = User::findOrFail($task->assignee);
+        event(new NotificationEvent($user, $task, $type));
+        event(new PusherEvent($task->title.' is modified by the creator', $user));
         return response()->json($task, 200);
     }
 
@@ -131,8 +161,11 @@ class TaskController extends Controller
         $task->forceFill([
             'deleted_at' => $task->freshTimestamp(),
         ])->save();
-        $notif_data = ['notification'=>$task->title.' is deleted by '.$task->creator, 'user_id'=> $task->assignee];
-        NotificationController::create($notif_data);
+
+        $type = 'deleted';
+        $user = User::findOrFail($task->assignee);
+        event(new NotificationEvent($user, $task, $type));
+        event(new PusherEvent($task->title.' is deleted', $user));
         return response()->json('Deleted Successfully', 200);
     }
 }

@@ -37,6 +37,7 @@ $router->group(['middleware' => ['auth', 'verified']], function () use ($router)
   $router->delete('/delete-task/{id}',  ['uses' => 'TaskController@deleteTask']); // for deleting task by creator
   $router->get('/listNotifs',  ['uses' => 'NotificationController@listNotification']); //get all notification for a user
   $router->delete('/notif/{id}',  ['uses' => 'NotificationController@deleteNotification']); // delete a notification
+  $router->delete('/clear-notif',  ['uses' => 'NotificationController@clearNotification']); // clear notification
 });
 
 $router->group(['middleware' => ['auth.role']], function () use ($router){
@@ -46,7 +47,7 @@ $router->group(['middleware' => ['auth.role']], function () use ($router){
   $router->get('all-tasks',  ['uses' => 'TaskController@showAllTasks']); //for showing everyone tasks
   $router->put('update-user/{id}', ['uses' => 'UserController@update']);
   $router->post('/create',['uses' => 'UserController@create']); 
-
+  $router->get('/tasks/{id}',['uses'=>'TaskController@getTaskForUser']); //get task for user;
 });
 
 $router->group([], function () use ($router) {
