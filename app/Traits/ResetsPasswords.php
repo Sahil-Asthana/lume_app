@@ -22,12 +22,12 @@ trait ResetsPasswords
      * @param  string|null  $token
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function showResetForm(Request $request, $token = null)
-    {
-        return view('auth.passwords.reset')->with(
-            ['token' => $token, 'email' => $request->email]
-        );
-    }
+    // public function showResetForm(Request $request, $token = null)
+    // {
+    //     return view('auth.passwords.reset')->with(
+    //         ['token' => $token, 'email' => $request->email]
+    //     );
+    // }
 
     /**
      * Reset the given user's password.

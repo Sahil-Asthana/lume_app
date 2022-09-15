@@ -29,25 +29,28 @@ $router->group(['middleware' => ['auth', 'verified']], function () use ($router)
   $router->post('/email/request-verification', ['as' => 'email.request.verification', 'uses' => 'AuthController@emailRequestVerification']);
   $router->post('/refresh', 'AuthController@refresh');
   $router->get('/me',['uses' => 'AuthController@me']);
-  $router->get('/tasks',  ['uses' => 'TaskController@showMyTasks']); //for showing current users task
+  $router->get('/my-tasks',  ['uses' => 'TaskController@getMyTasks']); // for getting task to build analytics
+  $router->get('/all-tasks',  ['uses' => 'TaskController@showAllTasks']); //for showing tasks
   $router->get('/today_tasks',  ['uses' => 'TaskController@getTodaysTask']); // for todays tasks
   $router->post('/create-task',['uses' => 'TaskController@create']); // for creating task
   $router->put('/status/{id}',  ['uses' => 'TaskController@updateStatus']); //for updating status 
   $router->put('/edit-task/{id}',  ['uses' => 'TaskController@editTask']); // for editing task by creator
   $router->delete('/delete-task/{id}',  ['uses' => 'TaskController@deleteTask']); // for deleting task by creator
   $router->get('/listNotifs',  ['uses' => 'NotificationController@listNotification']); //get all notification for a user
+  $router->delete('/tasks/bulk-delete',['uses' => 'TaskController@bulkDelete']); // bulk delete task
   $router->delete('/notif/{id}',  ['uses' => 'NotificationController@deleteNotification']); // delete a notification
   $router->delete('/clear-notif',  ['uses' => 'NotificationController@clearNotification']); // clear notification
 });
 
-$router->group(['middleware' => ['auth.role']], function () use ($router){
+$router->group(['middleware' => ['auth.role','verified']], function () use ($router){
   $router->get('users',  ['uses' => 'UserController@showAllUsers']);
   $router->get('users/{id}', ['uses' => 'UserController@showOneUser']);
   $router->delete('delete-user/{id}', ['uses' => 'UserController@delete']);
-  $router->get('all-tasks',  ['uses' => 'TaskController@showAllTasks']); //for showing everyone tasks
+  // $router->get('all-tasks',  ['uses' => 'TaskController@showAllTasks']); //for showing everyone tasks
   $router->put('update-user/{id}', ['uses' => 'UserController@update']);
   $router->post('/create',['uses' => 'UserController@create']); 
   $router->get('/tasks/{id}',['uses'=>'TaskController@getTaskForUser']); //get task for user;
+  $router->delete('/bulk-delete',['uses' => 'UserController@bulkDelete']);
 });
 
 $router->group([], function () use ($router) {
@@ -63,6 +66,5 @@ $router->group([], function () use ($router) {
 //   $user = App\User::findOrFail($id);
 //   return Mail::to($user)->send(new App\Mail\DailyEmail($user));
 // });
-
 
 

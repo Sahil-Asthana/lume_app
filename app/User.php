@@ -80,7 +80,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
       if( $model->isDirty('email') ) {
         $model->setAttribute('email_verified_at', null);
         $model->sendEmailVerificationNotification();
-                }
+            }
         });
     }
 public function sendPasswordResetNotification($token)

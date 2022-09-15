@@ -49,7 +49,7 @@ class UserController extends Controller
             if($request->sort != 'created_at') $user = $user->orderBy($request->sort,'asc');
             else $user = $user->orderBy($request->sort,'desc');
         }
-        $user = $user->get();
+        $user = $user->paginate(5);
         return response()->json($user);
     }
 
@@ -101,6 +101,21 @@ class UserController extends Controller
         $user->forceFill([
             'deleted_at' => $user->freshTimestamp(),
         ])->save();
+        return response()->json('Deleted Successfully', 200);
+    }
+
+    public function bulkDelete(Request $request){
+        $ids = $request->arrayId;
+        foreach($ids as $id){
+            $user = User::findOrFail($id);
+            if($user['deleted_by'] != 'active'){
+                return response()->json('No user exist',404);
+            }
+            $user['deleted_by'] = auth()->user()->id;
+            $user->forceFill([
+                'deleted_at' => $user->freshTimestamp(),
+            ])->save();
+        }
         return response()->json('Deleted Successfully', 200);
     }
 }
